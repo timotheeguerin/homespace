@@ -3,15 +3,17 @@ import glob from "glob";
 import { join } from "path";
 import { promisify } from "util";
 import { Workspace, WorkspacePackage } from "./types.js";
+import { HomespaceError, isFile } from "./utils.js";
 
 export async function resolveWorkspace(directory: string): Promise<Workspace> {
-  const workspacePackage = await loadPackageJson(join(directory, "package.json"));
-  const packages = await resolveWorkspacePackages(directory, workspacePackage.workspaces);
-  return {
-    rootPath: directory,
-    name: workspacePackage.name ?? "n/a",
-    packages,
-  };
+  const workspace = await loadPackageOrWorkspace(directory);
+  if (workspace === undefined) {
+    throw new HomespaceError(`Workspace not found at "${directory}"`);
+  }
+  if (workspace.type === "package") {
+    throw new HomespaceError(`Package "${directory}" is not a workspace. Missing "workspaces" property.`);
+  }
+  return workspace;
 }
 
 async function loadPackageJson(path: string) {
@@ -28,10 +30,41 @@ async function resolveWorkspacePackages(root: string, packages: string[]): Promi
       cwd: root,
     });
     for (const relativePath of resolvedPaths) {
-      result[relativePath] = {
-        path: join(root, relativePath),
-      };
+      const packagePath = join(root, relativePath);
+      const packageOrWorkspace = await loadPackageOrWorkspace(packagePath);
+      if (packageOrWorkspace === undefined) {
+        continue;
+      } else if (packageOrWorkspace.type === "package") {
+        result[relativePath] = packageOrWorkspace;
+      } else {
+        for (const [nestedRelativePath, nestedPackage] of Object.entries(packageOrWorkspace.packages)) {
+          result[join(relativePath, nestedRelativePath)] = nestedPackage;
+        }
+      }
     }
   }
   return result;
+}
+
+async function loadPackageOrWorkspace(directory: string): Promise<WorkspacePackage | Workspace | undefined> {
+  const packageJsonPath = join(directory, "package.json");
+  if (!(await isFile(packageJsonPath))) {
+    return undefined;
+  }
+  const definition = await loadPackageJson(packageJsonPath);
+  if (definition.workspaces) {
+    const packages = await resolveWorkspacePackages(directory, definition.workspaces);
+    return {
+      type: "workspace",
+      rootPath: directory,
+      name: definition.name,
+      packages,
+    };
+  } else {
+    return {
+      type: "package",
+      name: definition.name,
+      path: directory,
+    };
+  }
 }
