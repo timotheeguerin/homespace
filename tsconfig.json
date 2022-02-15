@@ -19,7 +19,8 @@
     "types": ["node"],
     "lib": ["es2019"],
     "experimentalDecorators": true,
-    "newLine": "LF"
+    "newLine": "LF",
+    "outDir": "dist"
   },
   "include": ["./src/**/*.ts"]
 }

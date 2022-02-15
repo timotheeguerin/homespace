@@ -9,7 +9,11 @@
     "build": "tsc -p .",
     "watch": "tsc -p . --watch"
   },
+  "bin": {
+    "homespace": "./cmd/cli.js"
+  },
   "devDependencies": {
+    "@types/glob": "^7.2.0",
     "@types/node": "~14.0.27",
     "@types/yargs": "^17.0.8",
     "prettier": "~2.5.1",
@@ -18,6 +22,7 @@
     "typescript": "~4.5.5"
   },
   "dependencies": {
+    "glob": "^7.2.0",
     "yargs": "^17.3.1"
   },
   "author": "Timothee Guerin",
