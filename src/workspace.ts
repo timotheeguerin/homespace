@@ -21,16 +21,16 @@ async function loadPackageJson(path: string) {
 
 const findFiles = promisify(glob);
 
-async function resolveWorkspacePackages(root: string, packages: string[]): Promise<WorkspacePackage[]> {
-  const result = [];
+async function resolveWorkspacePackages(root: string, packages: string[]): Promise<Record<string, WorkspacePackage>> {
+  const result: Record<string, WorkspacePackage> = {};
   for (const pattern of packages) {
     const resolvedPaths = await findFiles(pattern, {
       cwd: root,
     });
-    for (const resolvedPath of resolvedPaths) {
-      result.push({
-        relativePath: resolvedPath,
-      });
+    for (const relativePath of resolvedPaths) {
+      result[relativePath] = {
+        path: join(root, relativePath),
+      };
     }
   }
   return result;

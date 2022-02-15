@@ -1,9 +1,9 @@
 export interface Workspace {
   name: string;
   rootPath: string;
-  packages: WorkspacePackage[];
+  packages: Record<string, WorkspacePackage>;
 }
 
 export interface WorkspacePackage {
-  relativePath: string;
+  path: string;
 }
